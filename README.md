@@ -1,9 +1,9 @@
 
 # Welcome to CDK Python project!
-- This project is a implementation of CDK L2 and L3(CDK Pattern) Construct
-- L1 Construct implementation is this [repo](https://github.com/rifat17/CdkApp02L1Construct)
+- This project is a implementation of CDK **L2** and **L3(CDK Pattern)** Construct
+- **L1** Construct implementation is this [repo](https://github.com/rifat17/CdkApp02L1Construct)
 
-This is a blank project for CDK development with Python.
+This is a project for CDK development with Python.
 
 The `cdk.json` file tells the CDK Toolkit how to execute app.
 
