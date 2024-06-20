@@ -14,6 +14,7 @@ from serverless_app.shared.constants import (
     ProductTableSecondaryKeyName,
     LambdaEnvKeys,
 )
+from aws_solutions_constructs.aws_lambda_dynamodb import LambdaToDynamoDB
 
 
 class ServerlessAppStack(Stack):
@@ -21,34 +22,53 @@ class ServerlessAppStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        product_table = dynamodb.Table(
+        product_backend = LambdaToDynamoDB(
             self,
-            "ProductTable",
-            table_name=ProductTableName,
-            partition_key=dynamodb.Attribute(
-                name=ProductTablePrimaryKeyName,
-                type=dynamodb.AttributeType.STRING,
-            ),
-            sort_key=dynamodb.Attribute(
-                name=ProductTableSecondaryKeyName,
-                type=dynamodb.AttributeType.STRING,
-            ),
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
-        )
-
-        get_product_lambda = lambda_.Function(
-            self,
-            "GetProductLambda",
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            code=lambda_.Code.from_asset("lambda_functions/products"),
-            handler="get_products.handler",
-            environment={
-                LambdaEnvKeys.PRODUCT_TABLE_NAME: product_table.table_name,
+            "ProductBackend",
+            lambda_function_props={
+                "runtime": lambda_.Runtime.PYTHON_3_9,
+                "code": lambda_.Code.from_asset("lambda_functions/products"),
+                "handler": "get_products.handler",
             },
+            dynamo_table_props={
+                "partition_key": dynamodb.Attribute(
+                    name=ProductTablePrimaryKeyName,
+                    type=dynamodb.AttributeType.STRING,
+                ),
+                "sort_key": dynamodb.Attribute(
+                    name=ProductTableSecondaryKeyName,
+                    type=dynamodb.AttributeType.STRING,
+                ),
+                "table_name": ProductTableName,
+                "removal_policy": RemovalPolicy.DESTROY,
+            },
+            table_environment_variable_name=LambdaEnvKeys.PRODUCT_TABLE_NAME,
+            table_permissions="Read",
         )
 
-        product_table.grant_read_data(get_product_lambda)
+        product_table = product_backend.dynamo_table
+        # product_table.add_global_secondary_index(
+        #     index_name="product_id",
+        #     partition_key=dynamodb.Attribute(
+        #         name=ProductTableSecondaryKeyName,
+        #         type=dynamodb.AttributeType.STRING,
+        #     ),
+        # )
+        # product_table.add_global_secondary_index(
+        #     index_name="product_name",
+        #     partition_key=dynamodb.Attribute(
+        #         name=ProductTablePrimaryKeyName,
+        #         type=dynamodb.AttributeType.STRING,
+        #     ),
+        #     sort_key=dynamodb.Attribute(
+        #         name=ProductTableSecondaryKeyName,
+        #         type=dynamodb.AttributeType.STRING,
+        #     ),
+        # )
+
+        get_product_lambda = product_backend.lambda_function
+
+        # product_table.grant_read_data(get_product_lambda)
 
         get_product_lambda_url = get_product_lambda.add_function_url(
             auth_type=lambda_.FunctionUrlAuthType.NONE,

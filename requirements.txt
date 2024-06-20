@@ -1,3 +1,4 @@
 aws-cdk-lib==2.146.0
 constructs>=10.0.0,<11.0.0
 boto3==1.34.130
+aws_solutions_constructs.aws_lambda_dynamodb>=2.60.0
